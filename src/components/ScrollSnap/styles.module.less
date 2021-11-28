@@ -1,0 +1,49 @@
+.scrollSnap {
+  position: relative;
+
+  .slider {
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    overflow-y: scroll;
+    height: 300px;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    cursor: grab;
+    &::-webkit-scrollbar {
+      width: 0;
+    }
+  }
+
+  .borderCell {
+    width: 100px;
+    height: 100px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 2px dotted #ababab;
+    pointer-events: none;
+  }
+
+  .cell {
+    display: inline-flex;
+    width: 100px;
+    height: 100px;
+    scroll-snap-align: start;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    pointer-events: none;
+
+    &:empty::before {
+      width: 100px;
+      height: 100px;
+      content: '_';
+      visibility: hidden;
+      display: block;
+    }
+  }
+}
