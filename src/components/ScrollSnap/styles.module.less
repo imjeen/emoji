@@ -1,5 +1,9 @@
 .scrollSnap {
   position: relative;
+  &.locked {
+    pointer-events: none;
+    cursor: pointer;
+  }
 
   .slider {
     display: flex;
@@ -24,7 +28,8 @@
     transform: translate(-50%, -50%);
     box-sizing: border-box;
     border-radius: 12px;
-    border: 2px dotted #ababab;
+    /* prettier-ignore */
+    border: 2PX dotted #ababab;
     pointer-events: none;
   }
 

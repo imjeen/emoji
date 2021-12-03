@@ -11,137 +11,151 @@ import styles from './styles.module.less';
 
 import Icon from '@/components/Icon';
 
+import { debounce, scrollTopTo } from '@/utils';
+
 export type TypeRefScrollSnap = { random: (manual?: boolean) => void };
 
-export default forwardRef<TypeRefScrollSnap, { list: any[]; onChange?: (data: any, index: number) => void }>(
-  function ScrollSnap({ list, onChange }, ref) {
-    const cellRef = useRef<HTMLDivElement>(null);
-    const sliderRef = useRef<HTMLDivElement>(null);
-    const [state, setState] = useState({
-      cellHeight: 0, // 单元格高度
-      shuffling: false, // 洗牌中
-    });
+export default forwardRef<
+  TypeRefScrollSnap,
+  { list: { name: string; [k: string]: any }[]; onChange?: (data: any, index: number) => void }
+>(function ScrollSnap({ list, onChange }, ref) {
+  const cellRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [state, setState] = useState({
+    cellHeight: 0, // 单元格高度
+    shuffling: false, // 洗牌中
+  });
 
-    useEffect(() => {
-      const handler = () => {
-        const cell = cellRef.current;
-        if (!cell) return;
-        const { height } = cell.getBoundingClientRect();
-        setState(preState => ({ ...preState, cellHeight: height }));
-      };
-      handler();
-      window.addEventListener('resize', handler, false);
-      return () => {
-        window.removeEventListener('resize', handler, false);
-      };
-    }, []);
+  useEffect(() => {
+    const _handler = () => {
+      const cell = cellRef.current;
+      if (!cell) return;
+      const { height } = cell.getBoundingClientRect();
+      setState(preState => ({ ...preState, cellHeight: height }));
+    };
 
-    const goTo = useCallback(
-      (index: number) => {
-        const slider = sliderRef.current;
-        if (!slider) return;
-        slider.scrollTo(0, index * state.cellHeight);
-      },
-      [state.cellHeight],
-    );
+    const handler = debounce(_handler, 800);
 
-    const random = useCallback(
-      (manual: boolean = false) => {
-        goTo(Math.floor(Math.random() * list.length));
-      },
-      [goTo, list.length],
-    );
+    handler();
 
-    useEffect(() => {
-      if (navigator.maxTouchPoints !== 0) return; // 排除触摸屏
+    window.addEventListener('resize', handler, false);
+    return () => {
+      window.removeEventListener('resize', handler, false);
+    };
+  }, []);
+
+  const goTo = useCallback(
+    async (index: number) => {
       const slider = sliderRef.current;
       if (!slider) return;
 
-      let dragStart = 0,
-        scrollStart = 0,
-        scrollTop = 0;
-      function sliderDragStart(event: React.PointerEvent<HTMLDivElement>) {
-        event.currentTarget.style.cursor = 'grabbing';
+      setState(pre => ({ ...pre, shuffling: true }));
+      // slider.scrollTo(0, index * state.cellHeight);
+      await scrollTopTo(index * state.cellHeight, slider);
+      setState(pre => ({ ...pre, shuffling: false }));
+    },
+    [state.cellHeight],
+  );
 
-        dragStart = event.clientY;
-        scrollStart = event.currentTarget.scrollTop;
-      }
+  const random = useCallback(
+    async (manual: boolean = false) => {
+      await goTo(Math.floor(Math.random() * list.length));
+    },
+    [goTo, list.length],
+  );
 
-      let sliderDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
-        if (event.currentTarget.style.cursor !== 'grabbing') return;
-        scrollTop = scrollStart - 2 * (event.clientY - dragStart);
-        event.currentTarget.scrollTop = scrollTop;
-      };
+  useEffect(() => {
+    if (navigator.maxTouchPoints !== 0) return; // 排除触摸屏
+    const slider = sliderRef.current;
+    if (!slider) return;
 
-      let sliderDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-        event.currentTarget.style.cursor = 'grab';
-      };
+    let dragStart = 0,
+      scrollStart = 0,
+      scrollTop = 0;
+    function sliderDragStart(event: React.PointerEvent<HTMLDivElement>) {
+      event.currentTarget.style.cursor = 'grabbing';
 
+      dragStart = event.clientY;
+      scrollStart = event.currentTarget.scrollTop;
+    }
+
+    let sliderDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.currentTarget.style.cursor !== 'grabbing') return;
+      scrollTop = scrollStart - 2 * (event.clientY - dragStart);
+      event.currentTarget.scrollTop = scrollTop;
+    };
+
+    let sliderDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+      event.currentTarget.style.cursor = 'grab';
+    };
+
+    // @ts-ignore
+    slider.addEventListener('mousedown', sliderDragStart);
+    // @ts-ignore
+    slider.addEventListener('mousemove', sliderDragMove);
+    // @ts-ignore
+    slider.addEventListener('mouseup', sliderDragEnd);
+    // @ts-ignore
+    slider.addEventListener('mouseout', sliderDragEnd);
+
+    return () => {
       // @ts-ignore
-      slider.addEventListener('mousedown', sliderDragStart);
+      slider.removeEventListener('mousedown', sliderDragStart);
       // @ts-ignore
-      slider.addEventListener('mousemove', sliderDragMove);
+      slider.removeEventListener('mousemove', sliderDragMove);
       // @ts-ignore
-      slider.addEventListener('mouseup', sliderDragEnd);
+      slider.removeEventListener('mouseup', sliderDragEnd);
       // @ts-ignore
-      slider.addEventListener('mouseout', sliderDragEnd);
+      slider.removeEventListener('mouseout', sliderDragEnd);
+    };
+  }, []);
 
-      return () => {
-        // @ts-ignore
-        slider.removeEventListener('mousedown', sliderDragStart);
-        // @ts-ignore
-        slider.removeEventListener('mousemove', sliderDragMove);
-        // @ts-ignore
-        slider.removeEventListener('mouseup', sliderDragEnd);
-        // @ts-ignore
-        slider.removeEventListener('mouseout', sliderDragEnd);
-      };
-    }, []);
-
-    useLayoutEffect(() => {
-      const slider = sliderRef.current;
-      if (!slider) return;
-      let scrollTimeout = 0;
-      const handler = (event: React.UIEvent<HTMLDivElement>) => {
-        window.clearTimeout(scrollTimeout);
-        scrollTimeout = window.setTimeout(() => {
-          const index = Math.round(slider.scrollTop / state.cellHeight);
-          const data = list[index];
-          data && onChange?.(data, index);
-        }, 500);
-      };
+  useLayoutEffect(() => {
+    const slider = sliderRef.current;
+    if (!slider) return;
+    let scrollTimeout = 0;
+    const handler = (event: React.UIEvent<HTMLDivElement>) => {
+      // if (state.shuffling) return console.log(`shuffling scroll`);
+      window.clearTimeout(scrollTimeout);
+      scrollTimeout = window.setTimeout(() => {
+        const index = Math.round(slider.scrollTop / state.cellHeight);
+        // console.log(`scroll`, index);
+        const data = list[index];
+        data && onChange?.(data, index);
+      }, 500);
+    };
+    // const handler = debounce(_handler, 500);
+    // @ts-ignore
+    slider.addEventListener('scroll', handler, false);
+    return () => {
       // @ts-ignore
-      slider.addEventListener('scroll', handler, false);
-      return () => {
-        // @ts-ignore
-        slider.removeEventListener('scroll', handler, false);
-      };
-    }, [list, onChange, state.cellHeight]);
+      slider.removeEventListener('scroll', handler, false);
+    };
+  }, [list, onChange, state]);
 
-    useLayoutEffect(() => {
-      random();
-      return () => {};
-    }, [random]);
+  useLayoutEffect(() => {
+    random();
+    return () => {};
+  }, [random]);
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        random,
-      }),
-      [random],
-    );
+  useImperativeHandle(
+    ref,
+    () => ({
+      random,
+    }),
+    [random],
+  );
 
-    return (
-      <aside className={styles.scrollSnap}>
-        <span className={styles.borderCell}></span>
-        <div className={styles.slider} ref={sliderRef}>
-          <i ref={cellRef} className={styles.cell} />
-          {list.map(({ name }, i) => (
-            <Icon key={name} name={name} className={styles.cell} />
-          ))}
-          <i className={styles.cell} />
-        </div>
-      </aside>
-    );
-  },
-);
+  return (
+    <aside className={[styles.scrollSnap, state.shuffling ? styles.locked : ''].join(' ')}>
+      <span className={styles.borderCell} />
+      <div className={styles.slider} ref={sliderRef}>
+        <i ref={cellRef} className={styles.cell} />
+        {list.map(({ name }, i) => (
+          <Icon key={name} name={name} className={styles.cell} />
+        ))}
+        <i className={styles.cell} />
+      </div>
+    </aside>
+  );
+});
