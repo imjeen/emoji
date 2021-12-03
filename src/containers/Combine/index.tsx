@@ -26,8 +26,11 @@ export default function Combine() {
     rightRef = useRef<TypeRefScrollSnap>(null);
 
   const onAllRandom = () => {
-    leftRef.current?.random();
-    rightRef.current?.random();
+    if (0 === Math.floor(Math.random() * 2)) {
+      leftRef.current?.random();
+    } else {
+      rightRef.current?.random();
+    }
   };
 
   useEffect(() => {

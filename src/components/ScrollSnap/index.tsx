@@ -30,8 +30,10 @@ export default forwardRef<TypeRefScrollSnap, { list: any[]; onChange?: (data: an
         setState(preState => ({ ...preState, cellHeight: height }));
       };
       handler();
-      document.addEventListener('resize', handler, false);
-      return document.removeEventListener('resize', handler, false);
+      window.addEventListener('resize', handler, false);
+      return () => {
+        window.removeEventListener('resize', handler, false);
+      };
     }, []);
 
     const goTo = useCallback(
@@ -105,7 +107,7 @@ export default forwardRef<TypeRefScrollSnap, { list: any[]; onChange?: (data: an
         scrollTimeout = window.setTimeout(() => {
           const index = Math.round(slider.scrollTop / state.cellHeight);
           const data = list[index];
-          onChange?.(data, index);
+          data && onChange?.(data, index);
         }, 500);
       };
       // @ts-ignore
