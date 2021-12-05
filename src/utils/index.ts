@@ -72,3 +72,20 @@ export function scrollTopTo(position: number, container: Element) {
     });
   });
 }
+
+export function beep(hz: number, ms: number, type = 'sine') {
+  if (typeof AudioContext === 'undefined') return;
+
+  const audio = new AudioContext();
+  const gainNode = audio.createGain();
+  gainNode.gain.value = 0.5;
+  gainNode.connect(audio.destination);
+
+  if (!audio) return;
+  const oscillator = audio.createOscillator();
+  oscillator.type = type as OscillatorType;
+  oscillator.frequency.value = hz;
+  oscillator.connect(gainNode);
+  oscillator.start();
+  oscillator.stop(audio.currentTime + ms / 1000);
+}

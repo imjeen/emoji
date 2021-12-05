@@ -11,7 +11,7 @@ import styles from './styles.module.less';
 
 import Icon from '@/components/Icon';
 
-import { debounce, scrollTopTo } from '@/utils';
+import { debounce, scrollTopTo, beep } from '@/utils';
 
 export type TypeRefScrollSnap = { random: (manual?: boolean) => void };
 
@@ -113,9 +113,25 @@ export default forwardRef<
   useLayoutEffect(() => {
     const slider = sliderRef.current;
     if (!slider) return;
-    let scrollTimeout = 0;
+    let scrollTimeout = 0,
+      lastScrollPosition = 0;
+    let vibrationTracker: any;
     const handler = (event: React.UIEvent<HTMLDivElement>) => {
       // if (state.shuffling) return console.log(`shuffling scroll`);
+
+      if (
+        (lastScrollPosition < event.currentTarget.scrollTop &&
+          vibrationTracker > Math.round(event.currentTarget.scrollTop % state.cellHeight)) ||
+        (lastScrollPosition > event.currentTarget.scrollTop &&
+          vibrationTracker < Math.round(event.currentTarget.scrollTop % state.cellHeight))
+      ) {
+        navigator.vibrate && navigator.vibrate(100);
+        beep(1e4, 1);
+      }
+
+      vibrationTracker = Math.round(event.currentTarget.scrollTop % state.cellHeight);
+      lastScrollPosition = event.currentTarget.scrollTop;
+
       window.clearTimeout(scrollTimeout);
       scrollTimeout = window.setTimeout(() => {
         const index = Math.round(slider.scrollTop / state.cellHeight);

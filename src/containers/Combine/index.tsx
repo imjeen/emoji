@@ -63,6 +63,7 @@ export default function Combine() {
         return;
       }
       cacheRef.current.manual = false;
+      cacheRef.current.loading = false;
       // console.log(`Matched!!!`);
       const { url, name } = getCombineData(left, right);
       setResult(pre => ({ ...pre, url, name }));
