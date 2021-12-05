@@ -1,24 +1,19 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useLayoutEffect,
-  useCallback,
-  forwardRef,
-  useImperativeHandle,
-} from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import styles from './styles.module.less';
 
 import Icon from '@/components/Icon';
 
 import { debounce, scrollTopTo, beep } from '@/utils';
 
-export type TypeRefScrollSnap = { random: (manual?: boolean) => void };
-
-export default forwardRef<
-  TypeRefScrollSnap,
-  { list: { name: string; [k: string]: any }[]; onChange?: (data: any, index: number) => void }
->(function ScrollSnap({ list, onChange }, ref) {
+export default (function ScrollSnap({
+  index,
+  list,
+  onChange,
+}: {
+  index: number;
+  list: { name: string; [k: string]: any }[];
+  onChange?: (index: number) => void;
+}) {
   const cellRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState({
@@ -57,13 +52,6 @@ export default forwardRef<
     [state.cellHeight],
   );
 
-  const random = useCallback(
-    async (manual: boolean = false) => {
-      await goTo(Math.floor(Math.random() * list.length));
-    },
-    [goTo, list.length],
-  );
-
   useEffect(() => {
     if (navigator.maxTouchPoints !== 0) return; // 排除触摸屏
     const slider = sliderRef.current;
@@ -72,20 +60,20 @@ export default forwardRef<
     let dragStart = 0,
       scrollStart = 0,
       scrollTop = 0;
-    function sliderDragStart(event: React.PointerEvent<HTMLDivElement>) {
+    const sliderDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
       event.currentTarget.style.cursor = 'grabbing';
 
       dragStart = event.clientY;
       scrollStart = event.currentTarget.scrollTop;
-    }
+    };
 
-    let sliderDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const sliderDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
       if (event.currentTarget.style.cursor !== 'grabbing') return;
       scrollTop = scrollStart - 2 * (event.clientY - dragStart);
       event.currentTarget.scrollTop = scrollTop;
     };
 
-    let sliderDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    const sliderDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
       event.currentTarget.style.cursor = 'grab';
     };
 
@@ -97,17 +85,6 @@ export default forwardRef<
     slider.addEventListener('mouseup', sliderDragEnd);
     // @ts-ignore
     slider.addEventListener('mouseout', sliderDragEnd);
-
-    return () => {
-      // @ts-ignore
-      slider.removeEventListener('mousedown', sliderDragStart);
-      // @ts-ignore
-      slider.removeEventListener('mousemove', sliderDragMove);
-      // @ts-ignore
-      slider.removeEventListener('mouseup', sliderDragEnd);
-      // @ts-ignore
-      slider.removeEventListener('mouseout', sliderDragEnd);
-    };
   }, []);
 
   useLayoutEffect(() => {
@@ -117,7 +94,7 @@ export default forwardRef<
       lastScrollPosition = 0;
     let vibrationTracker: any;
     const handler = (event: React.UIEvent<HTMLDivElement>) => {
-      // if (state.shuffling) return console.log(`shuffling scroll`);
+      if (state.shuffling) return console.log(`shuffling scroll`);
 
       if (
         (lastScrollPosition < event.currentTarget.scrollTop &&
@@ -135,12 +112,12 @@ export default forwardRef<
       window.clearTimeout(scrollTimeout);
       scrollTimeout = window.setTimeout(() => {
         const index = Math.round(slider.scrollTop / state.cellHeight);
-        // console.log(`scroll`, index);
-        const data = list[index];
-        data && onChange?.(data, index);
+        // const data = list[index];
+        index >= 0 && onChange?.(index);
+        setState(pre => ({ ...pre, shuffling: false }));
       }, 500);
     };
-    // const handler = debounce(_handler, 500);
+    // const handler = debounce(e => _handler(e), 500);
     // @ts-ignore
     slider.addEventListener('scroll', handler, false);
     return () => {
@@ -150,17 +127,8 @@ export default forwardRef<
   }, [list, onChange, state]);
 
   useLayoutEffect(() => {
-    random();
-    return () => {};
-  }, [random]);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      random,
-    }),
-    [random],
-  );
+    goTo(index);
+  }, [goTo, index]);
 
   return (
     <aside className={[styles.scrollSnap, state.shuffling ? styles.locked : ''].join(' ')}>

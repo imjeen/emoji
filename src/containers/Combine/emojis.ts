@@ -2005,3 +2005,31 @@ export function getCombineData(emoji1: typeof emojis[0], emoji2: typeof emojis[0
 
   return { name: `${u1}_${u2}.png`, pathname, url: `${EMOJI_API_PATH}${pathname}/${u1}_${u2}.png` };
 }
+
+const getRandom = () => {
+  const index = Math.floor(Math.random() * emojis.length);
+  return [emojis[index], index] as const;
+};
+
+/**
+ * 获取随机组合的索引
+ *
+ * @export
+ * @return {*}
+ */
+export function getRandomIndex() {
+  let result: [number, number] = [0, 0];
+  const run = () => {
+    const [left, from] = getRandom(),
+      [, to] = getRandom();
+    if (left.matches.includes(to) === false) {
+      // console.warn(`not matched!`);
+      run();
+      return;
+    }
+    // console.log(`Matched!!!`);
+    result = [from, to];
+  };
+  run();
+  return result;
+}
