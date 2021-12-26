@@ -54,9 +54,9 @@ export default function Combine() {
   return (
     <>
       <h2 className={styles.title}> Combine emoji to create new ones </h2>
-      <ResultFigure src={result.url} />
+      <ResultFigure src={result.url} onClick={handleRandom} />
 
-      <menu className={styles.menu}>
+      <menu className={styles.menu} style={{ display: 'none' }}>
         <CopyButton text={result.url}>
           <ShareSVG className={styles.icon} />
         </CopyButton>
@@ -78,6 +78,7 @@ export default function Combine() {
 function ResultFigure({
   src,
   name = '',
+  onClick,
   matching,
   onLoad,
   onError,
@@ -85,6 +86,7 @@ function ResultFigure({
   src: string;
   name?: string;
   matching?: boolean;
+  onClick?: () => void;
   onLoad?: () => void;
   onError?: () => void;
 }) {
@@ -98,11 +100,11 @@ function ResultFigure({
     onLoad?.();
   };
   return src ? (
-    <figure className={styles.figure}>
+    <figure className={styles.figure} onClick={onClick}>
       <img src={src} alt={name} width={'100%'} onError={handleError} onLoad={handleLoad} />
     </figure>
   ) : (
-    <figure className={styles.figure404}>
+    <figure className={styles.figure404} onClick={onClick}>
       <img src={'./sad.svg'} alt={name} width={'30%'} />
       <figcaption>{matching ? 'Matching...' : 'Not Matched'}</figcaption>
     </figure>
