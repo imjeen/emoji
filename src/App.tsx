@@ -1,6 +1,8 @@
 import React from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import Combine from '@/containers/Combine';
+import Create from '@/containers/Create';
 
 import useUpgrade from '@/hooks/upgrade';
 import Button from '@mui/material/Button';
@@ -15,7 +17,14 @@ function App() {
   const { newVersionAvailable, onUpdate } = useUpgrade();
   return (
     <>
-      <Combine />
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to={'/home'} />} />
+          <Route path="/home" element={<Combine />} />
+          <Route path="/create" element={<Create />} />
+          {/* <Route path="*" element={<Combine />} /> */}
+        </Routes>
+      </HashRouter>
 
       <Snackbar
         open={newVersionAvailable}
