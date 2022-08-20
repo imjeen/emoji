@@ -20,7 +20,7 @@ export default function CopyButton({ text, children }: { text: string; children?
         title={text}
         onSuccess={handleSuccess}
       >
-        {children || null}
+        <> {children || null}</>
       </Clipboard>
     </>
   );
