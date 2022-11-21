@@ -10,7 +10,7 @@ import { accessoriesList } from '@/components/CustomEmoji/Accessories';
 import { RandomButton, ResetButton } from '@/components/CustomEmoji/Buttons';
 import FacialsList from '@/components/CustomEmoji/FacialsList';
 import BasesList from '@/components/CustomEmoji/BasesList';
-// import Modal from '../components/Emoji/Modal';
+import Modal from '@/components/CustomEmoji/Modal';
 
 import ReactDOMServer from 'react-dom/server';
 
@@ -130,7 +130,7 @@ function Index() {
   return (
     <div className="bg-white">
       <main>
-        {/* {showModal && <Modal {...{ onDownloadPNG, onDownloadSVG, setShowModal, canvasRef }} />} */}
+        {showModal && <Modal {...{ onDownloadPNG, onDownloadSVG, setShowModal, canvasRef }} />}
 
         <div className={styles.box}>
           <aside>
